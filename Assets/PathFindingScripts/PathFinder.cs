@@ -102,7 +102,7 @@ public class PathFinder : MonoBehaviour
 
     void Update()
     {
-        if(wanderer.iSeeEnemy == false) // The wanderer is inside a bush -------------------------------------------------------------
+        if(!wanderer.iSeeEnemy) // The wanderer is inside a bush they wait until the enemy leaves -------------------------------------------------------------
         {
             if(routeIndex < routeBack.Count) // if the player hasn't made it to the end
             {

@@ -1,26 +1,56 @@
-﻿using System.Collections;
+﻿ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Assassin : MonoBehaviour
 {
-    public int health;
-    public float speed;
+    public Wander wander;
+    public Seek seek;
+    public bool iSeePlayer;
+    public float playerBushDist;
 
-    public GameObject player;
-    public GameObject enemy;
-    public GameObject bush; //for each bush, go through an array and measure the distance between the player and the bush. the closest bush index gets saved then checked again with the player distance and to see if they are close together before choosing
-
+    public List<GameObject> player = new List<GameObject>();
+    // is there an ignore function for colliders
+    
     public IDecision currentDecision;
     IDecision AssassinAI;
 
+    private void Start()
+    {
+        wander = GetComponent<Wander>();
+        seek = GetComponent<Seek>();
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.gameObject.tag == "Wanderer")
+        {
+            iSeePlayer = true;
+            player.Add(other.gameObject);
+        }
+    }
+    void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.tag == "Wanderer")
+        {
+            iSeePlayer = false;
+            player.Remove(other.gameObject);
+        }
+    }
+
     private void Update()
     {
-        AssassinAI = new DoISeePlayer(new IsPlayerInBush(new WanderAround(this), new AmICloseToPlayer(new AttackPlayer(this), new ChasePlayer(this), this), this), new WanderAround(this), this);
+        AssassinAI = new DoISeePlayer(
+                        new IsPlayerInBush(
+                            new WanderAround(this), 
+                            new AmICloseToPlayer(
+                                new AttackPlayer(this), 
+                                new ChasePlayer(this), this), this), 
+                        new WanderAround(this), this);
 
         currentDecision = AssassinAI;
 
-        if (currentDecision != null)
+        while (currentDecision != null)
         {
             currentDecision = currentDecision.MakeDecision();
         }
@@ -33,27 +63,27 @@ public class DoISeePlayer : IDecision
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public DoISeePlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public DoISeePlayer(IDecision _trueBranch, IDecision _falseBranch, Assassin assassin)
     {
-        if (Vector3.Distance(assassin.enemy.transform.position, assassin.player.transform.position) < 1) // use radius/collider
+        if (assassin.iSeePlayer) // use radius/collider
         {
             value = true;
-            this.trueBranch = trueBranch;
         }
         else
         {
             value = false;
-            this.falseBranch = falseBranch;
         }
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
     }
 
     public IDecision MakeDecision()
     {
-        if(value == true)
+        if(value)
         {
             return trueBranch;
         }
-        else if(value == false)
+        else if(!value)
         {
             return falseBranch;
         }
@@ -62,36 +92,44 @@ public class DoISeePlayer : IDecision
     }
 }
 
-public class IsPlayerInBush : IDecision
+public class IsPlayerInBush : IDecision //-----------------------------------------------------------------------
 {
+    Wanderer wanderer;
     bool value;
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public IsPlayerInBush(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public IsPlayerInBush(IDecision _trueBranch, IDecision _falseBranch, Assassin assassin)
     {
-        if(Vector3.Distance(assassin.player.transform.position, assassin.bush.transform.position) < 0.6)
+        for(int i = 0; i < assassin.player.Count; i++)
         {
-            value = true;
-            this.trueBranch = trueBranch;
+            wanderer = assassin.player[i].GetComponent<Wanderer>();
+
+            if (wanderer.InBush)
+            {
+                value = true;
+            }
+            
         }
-        else
+
+        if(value != true)
         {
             value = false;
-            this.falseBranch = falseBranch;
         }
+
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
     }
     public IDecision MakeDecision()
     {
-        if (value == true)
+        if (value)
         {
             return trueBranch;
         }
-        else if (value == false)
+        else if (!value)
         {
             return falseBranch;
         }
-
         return null;
     }
 }
@@ -102,27 +140,32 @@ public class AmICloseToPlayer : IDecision
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public AmICloseToPlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public AmICloseToPlayer(IDecision _trueBranch, IDecision _falseBranch, Assassin assassin)
     {
-        if (Vector3.Distance(assassin.player.transform.position, assassin.bush.transform.position) < 0.6)
+        for(int i = 0; i < assassin.player.Count; i++)
         {
-            value = true;
-            this.trueBranch = trueBranch;
+            if (Vector3.Distance(assassin.player[i].transform.position, assassin.transform.position) < assassin.playerBushDist)
+            {
+                value = true;
+            }
         }
-        else
+        
+        if(value != true)
         {
             value = false;
-            this.falseBranch = falseBranch;
         }
+
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
     }
 
     public IDecision MakeDecision()
     {
-        if (value == true)
+        if (value)
         {
             return trueBranch;
         }
-        else if (value == false)
+        else if (!value)
         {
             return falseBranch;
         }
@@ -140,11 +183,14 @@ public class WanderAround : IDecision
     }
     public IDecision MakeDecision()
     {
+
+        assassin.seek.isSeeking = false;
+        assassin.wander.isWandering = true;
         return null;
     }
 }
 
-public class AttackPlayer : IDecision
+public class AttackPlayer : IDecision //------------------------------------------------------------
 {
     Assassin assassin;
 
@@ -154,6 +200,8 @@ public class AttackPlayer : IDecision
     }
     public IDecision MakeDecision()
     {
+        // attack per second
+        assassin.wander.isWandering = false;
         return null;
     }
 }
@@ -168,6 +216,8 @@ public class ChasePlayer : IDecision
     }
     public IDecision MakeDecision()
     {
+        assassin.wander.isWandering = false;
+        assassin.seek.isSeeking = true;
         return null;
     }
 }

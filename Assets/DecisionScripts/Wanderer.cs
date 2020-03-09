@@ -14,43 +14,45 @@ public class Wanderer : MonoBehaviour
     public bool iSeeEnemy;
 
     [Header("Bush Stats")]
-    public GameObject[] bush; // might change this to vector
-    public int numberOfBushes;
+    public List<GameObject> bush = new List<GameObject>();
 
     [Header("Enemy Stats")]
-    public GameObject enemy; // might change this to vector
+    public List<GameObject> enemy = new List<GameObject>();
 
     public IDecision currentDecision;
     IDecision WandererAI;
 
-    void OnCollisionEnter(Collision collision)
+    void OnTriggerEnter(Collider other)
     {
-        if (collision.gameObject.tag == "Bush") // if wanderer makes collision with bush
+        if (other.gameObject.tag == "Bush") // if wanderer makes collision with bush
         {
             iSeeBush = true; // they see the bush
+            bush.Add(other.gameObject);
         }
 
-        if (collision.gameObject.tag == "Enemy") // if wanderer makes collision with enemy
+        if (other.gameObject.tag == "Enemy") // if wanderer makes collision with enemy
         {
             iSeeEnemy = true; // they see the enemy
+            enemy.Add(other.gameObject);
         }
     }
-    void OnCollisionExit(Collision collision)
+    void OnTriggerExit(Collider other)
     {
-        if (collision.gameObject.tag == "Bush") // if wanderer stops making col with bush
+        if (other.gameObject.tag == "Bush") // if wanderer stops making col with bush
         {
             iSeeBush = false; // they don't see bush
+            bush.Remove(other.gameObject);
         }
 
-        if (collision.gameObject.tag == "Enemy") // if wanderer stops making col with enemy
+        if (other.gameObject.tag == "Enemy") // if wanderer stops making col with enemy
         {
             iSeeEnemy = false; // they don't see enemy
+            enemy.Remove(other.gameObject);
         }
     }
 
     void Start() // set everything to false
     {
-        bush = new GameObject[numberOfBushes];
         seek = GetComponent<Seek>();
         flee = GetComponent<Flee>();
         InBush = false;
@@ -62,11 +64,17 @@ public class Wanderer : MonoBehaviour
     {
         if(wandererHealth > 0) // if wanderer has health, then it's alive
         {
-            WandererAI = new DoISeeEnemy(new AmIInBush(new StayInBush(this), new DoISeeBush(new HideInBush(this), new Panic(this), this), this), new ContinuePath(this), this);
+            WandererAI =    new DoISeeEnemy(
+                                new AmIInBush(
+                                    new StayInBush(this), 
+                                    new DoISeeBush(
+                                        new HideInBush(this), 
+                                        new Panic(this), this), this), 
+                                new ContinuePath(this), this);
 
             currentDecision = WandererAI;
 
-            if (currentDecision != null)
+            while (currentDecision != null)
             {
                 currentDecision = currentDecision.MakeDecision();
             }
@@ -91,27 +99,27 @@ public class DoISeeEnemy : IDecision
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public DoISeeEnemy(IDecision trueBranch, IDecision falseBranch, Wanderer wanderer)
+    public DoISeeEnemy(IDecision _trueBranch, IDecision _falseBranch, Wanderer wanderer)
     {
         if (wanderer.iSeeEnemy == true) // collider controls the outcome
         {
             value = true;
-            this.trueBranch = trueBranch;
         }
         else
         {
             value = false;
-            this.falseBranch = falseBranch;
         }
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
     }
 
     public IDecision MakeDecision()
     {
-        if (value == true)
+        if (value)
         {
             return trueBranch;
         }
-        else if (value == false)
+        else if (!value)
         {
             return falseBranch;
         }
@@ -125,53 +133,45 @@ public class AmIInBush : IDecision //-------------------------------------------
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public AmIInBush(IDecision trueBranch, IDecision falseBranch, Wanderer wanderer) // use radius
+    public AmIInBush(IDecision _trueBranch, IDecision _falseBranch, Wanderer wanderer) // use radius
     {
-        float maxDistance = Mathf.Infinity; // setup distance
+        float minDistance = Mathf.Infinity; // setup distance
         float newDist; // challenger distance
 
-        for(int i = 0; i < wanderer.numberOfBushes; i++) // could be .Count or .size for vectors
+        for(int i = 0; i < wanderer.bush.Count; i++) // could be .Count or .size for vectors
         {
-            int desiredIndex = 0; // index for closest bush
 
             newDist = Vector3.Distance(wanderer.transform.position, wanderer.bush[i].transform.position); // Distance check
 
-            if(newDist < maxDistance) // if new distance is less than set distance
+            if(newDist < minDistance) // if new distance is less than set distance
             {
-                maxDistance = newDist; // set dist becomes new dist
-                desiredIndex = i; // the current index gets saved
+                minDistance = newDist; // set dist becomes new dist
             }
 
-            if(Vector3.Distance(wanderer.transform.position, wanderer.bush[desiredIndex].transform.position) < 0.6) // distance check between the closest bush and the wanderer
-            {
-                wanderer.InBush = true;
-            }
-            else
-            {
-                wanderer.InBush = false;
-            }
         }
 
-        if (wanderer.InBush == true) // if wanderer is in bush
+        if(minDistance < 0.6f) // distance check between the closest bush and the wanderer
         {
+            wanderer.InBush = true;
             value = true;
-            this.trueBranch = trueBranch;
         }
         else
         {
+            wanderer.InBush = false;
             value = false;
-            this.falseBranch = falseBranch;
-
         }
+
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
     }
 
     public IDecision MakeDecision()
     {
-        if (value == true)
+        if (value)
         {
             return trueBranch;
         }
-        else if (value == false)
+        else if (!value)
         {
             return falseBranch;
         }
@@ -185,27 +185,28 @@ public class DoISeeBush : IDecision
     IDecision trueBranch;
     IDecision falseBranch;
 
-    public DoISeeBush(IDecision trueBranch, IDecision falseBranch, Wanderer wanderer)
+    public DoISeeBush(IDecision _trueBranch, IDecision _falseBranch, Wanderer wanderer)
     {
-        if (wanderer.iSeeBush == true) // collider controls the outcome
+        if (wanderer.iSeeBush) // collider controls the outcome
         {
             value = true;
-            this.trueBranch = trueBranch;
         }
         else
         {
             value = false;
-            this.falseBranch = falseBranch;
         }
+
+        trueBranch = _trueBranch;
+        falseBranch = _falseBranch;
 
     }
     public IDecision MakeDecision()
     {
-        if (value == true)
+        if (value)
         {
             return trueBranch;
         }
-        else if (value == false)
+        else if (!value)
         {
             return falseBranch;
         }
@@ -225,7 +226,10 @@ public class ContinuePath : IDecision
     {
         // continue Pathfinding/do nothing
         // OnCollision controls outcome
-        
+        wanderer.flee.isFleeing = false;
+        wanderer.seek.isSeeking = false;
+
+
         return null;
     }
 }
@@ -241,12 +245,15 @@ public class StayInBush : IDecision
     public IDecision MakeDecision()
     {
         // Hold position/Do nothing
+        wanderer.flee.isFleeing = false;
+        wanderer.seek.isSeeking = false;
         return null;
     }
 }
 
 public class Panic : IDecision
 {
+
     Wanderer wanderer;
     public Panic(Wanderer _wanderer)
     {
@@ -257,7 +264,8 @@ public class Panic : IDecision
     public IDecision MakeDecision()
     {
         //Run around the place/flee
-        
+        wanderer.flee.isFleeing = true;
+        wanderer.seek.isSeeking = false;
         return null;
     }
 }
@@ -274,7 +282,8 @@ public class HideInBush : IDecision
     public IDecision MakeDecision()
     {
         //Run to Bush/Seek
-        
+        wanderer.seek.isSeeking = true;
+        wanderer.flee.isFleeing = false;
         return null;
     }
 }

@@ -5,12 +5,11 @@ using UnityEngine;
 public class Flee : MonoBehaviour
 {
     Agent agent;
-    //public float MaxVelocity;
     public GameObject Target;
-    public bool isFleeing = false;
+    public bool isFleeing;
 
     private Vector3 force;
-    public Vector3 v;
+    private Vector3 v;
     private void Awake()
     {
         agent = GetComponent<Agent>();
@@ -18,6 +17,7 @@ public class Flee : MonoBehaviour
 
     void Start()
     {
+        isFleeing = false;
         agent.currentVelocity = Vector3.zero; // set current value to all zero
     }
 
@@ -25,7 +25,7 @@ public class Flee : MonoBehaviour
     {
         if(isFleeing == true)
         {
-            v = (transform.position - Target.transform.position).normalized * agent.MaxVelocity; //calculate a vector from the agent to its target
+            v = (transform.position - Target.transform.position).normalized * 100; //calculate a vector from the agent to its target
 
             force = v - agent.currentVelocity; // at the start is the same thing as saying 5 - 0 = 5;
 
@@ -33,13 +33,15 @@ public class Flee : MonoBehaviour
         }
     }
 
-    Vector3 OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         if(other.gameObject.tag == "Enemy")
         {
             v = other.gameObject.transform.position;
-            return v;
         }
-        return v;
+        else
+        {
+            v = Vector3.zero;
+        }
     }
 }
