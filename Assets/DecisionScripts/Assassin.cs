@@ -16,24 +16,24 @@ public class Assassin : MonoBehaviour
 
     private void Update()
     {
-        AssassinAI = new 
+        AssassinAI = new DoISeePlayer(new IsPlayerInBush(new WanderAround(this), new AmICloseToPlayer(new AttackPlayer(this), new ChasePlayer(this), this), this), new WanderAround(this), this);
 
         currentDecision = AssassinAI;
 
         if (currentDecision != null)
         {
-            currentDecision = currentDecision.makeDecision();
+            currentDecision = currentDecision.MakeDecision();
         }
     }
 }
 
-public class DoISeePlayer
+public class DoISeePlayer : IDecision
 {
     bool value;
     IDecision trueBranch;
     IDecision falseBranch;
 
-    DoISeePlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public DoISeePlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
     {
         if (Vector3.Distance(assassin.enemy.transform.position, assassin.player.transform.position) < 1) // use radius/collider
         {
@@ -47,7 +47,7 @@ public class DoISeePlayer
         }
     }
 
-    IDecision makeDecision()
+    public IDecision MakeDecision()
     {
         if(value == true)
         {
@@ -62,13 +62,13 @@ public class DoISeePlayer
     }
 }
 
-public class IsPlayerInBush
+public class IsPlayerInBush : IDecision
 {
     bool value;
     IDecision trueBranch;
     IDecision falseBranch;
 
-    IsPlayerInBush(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public IsPlayerInBush(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
     {
         if(Vector3.Distance(assassin.player.transform.position, assassin.bush.transform.position) < 0.6)
         {
@@ -81,7 +81,7 @@ public class IsPlayerInBush
             this.falseBranch = falseBranch;
         }
     }
-    IDecision makeDecision()
+    public IDecision MakeDecision()
     {
         if (value == true)
         {
@@ -96,13 +96,13 @@ public class IsPlayerInBush
     }
 }
 
-public class AmICloseToPlayer
+public class AmICloseToPlayer : IDecision
 {
     bool value;
     IDecision trueBranch;
     IDecision falseBranch;
 
-    AmICloseToPlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
+    public AmICloseToPlayer(IDecision trueBranch, IDecision falseBranch, Assassin assassin)
     {
         if (Vector3.Distance(assassin.player.transform.position, assassin.bush.transform.position) < 0.6)
         {
@@ -115,7 +115,8 @@ public class AmICloseToPlayer
             this.falseBranch = falseBranch;
         }
     }
-    IDecision makeDecision()
+
+    public IDecision MakeDecision()
     {
         if (value == true)
         {
@@ -129,23 +130,44 @@ public class AmICloseToPlayer
     }
 }
 
-public class WanderAround
+public class WanderAround : IDecision
 {
     Assassin assassin;
 
-    WanderAround(Assassin ass
-        )
+    public WanderAround(Assassin _assassin)
     {
-
+        assassin = _assassin;
+    }
+    public IDecision MakeDecision()
+    {
+        return null;
     }
 }
 
-public class AttackPlayer
+public class AttackPlayer : IDecision
 {
+    Assassin assassin;
 
+    public AttackPlayer(Assassin _assassin)
+    {
+        assassin = _assassin;
+    }
+    public IDecision MakeDecision()
+    {
+        return null;
+    }
 }
 
-public class ChasePlayer
+public class ChasePlayer : IDecision
 {
+    Assassin assassin;
 
+    public ChasePlayer(Assassin _assassin)
+    {
+        assassin = _assassin;
+    }
+    public IDecision MakeDecision()
+    {
+        return null;
+    }
 }
