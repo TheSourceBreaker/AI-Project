@@ -12,6 +12,7 @@ public class Wanderer : MonoBehaviour
     public bool InBush;
     public bool iSeeBush;
     public bool iSeeEnemy;
+    private Rigidbody rb;
 
     [Header("Bush Stats")]
     public List<GameObject> bush = new List<GameObject>();
@@ -53,6 +54,7 @@ public class Wanderer : MonoBehaviour
 
     void Start() // set everything to false
     {
+        rb = GetComponent<Rigidbody>();
         seek = GetComponent<Seek>();
         flee = GetComponent<Flee>();
         InBush = false;
@@ -282,6 +284,23 @@ public class HideInBush : IDecision
     public IDecision MakeDecision()
     {
         //Run to Bush/Seek
+        //Add closest bush as new target
+
+        GameObject closestBush = null;
+        float minDistance = Mathf.Infinity;
+        float newDist;
+
+        for(int i = 0; i < wanderer.bush.Count; i++)
+        {
+            newDist = Vector3.Distance(wanderer.transform.position, wanderer.bush[i].transform.position);
+
+            if (newDist < minDistance)
+            {
+                minDistance = newDist;
+                closestBush = wanderer.bush[i];
+            }
+        }
+        wanderer.seek.Target = closestBush;
         wanderer.seek.isSeeking = true;
         wanderer.flee.isFleeing = false;
         return null;

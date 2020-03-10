@@ -9,6 +9,9 @@ public class Assassin : MonoBehaviour
     public bool iSeePlayer;
     public float playerBushDist;
 
+    public float timeBtwHits;
+    public float startTimeBtwHits;
+
     public List<GameObject> player = new List<GameObject>();
     // is there an ignore function for colliders
     
@@ -17,6 +20,7 @@ public class Assassin : MonoBehaviour
 
     private void Start()
     {
+        timeBtwHits = startTimeBtwHits;
         wander = GetComponent<Wander>();
         seek = GetComponent<Seek>();
     }
@@ -28,6 +32,7 @@ public class Assassin : MonoBehaviour
             iSeePlayer = true;
             player.Add(other.gameObject);
         }
+        
     }
     void OnTriggerExit(Collider other)
     {
@@ -53,6 +58,15 @@ public class Assassin : MonoBehaviour
         while (currentDecision != null)
         {
             currentDecision = currentDecision.MakeDecision();
+        }
+
+        if(timeBtwHits <= 0)
+        {
+
+        }
+        else
+        {
+            timeBtwHits -= Time.deltaTime;
         }
     }
 }
