@@ -4,7 +4,9 @@ using UnityEngine;
 
 public class Node : MonoBehaviour
 {
+    PathFinder pathFinder;
     public List<Node> neighbors = new List<Node>();
+    public List<GameObject> player = new List<GameObject>();
     public Node prevNode;
     public float difficulty;
     public float gScore; // Cost
@@ -28,6 +30,13 @@ public class Node : MonoBehaviour
 
     void Start()
     {
+        
         PathFinder.allNodes.Add(this);
+        difficulty = Random.Range(1.0f, 5.0f);
+    }
+
+    void Update()
+    {
+        difficulty = Random.Range(1.0f, 5.0f);
     }
 }

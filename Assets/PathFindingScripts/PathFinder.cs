@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+//using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,10 +18,17 @@ public class PathFinder : MonoBehaviour
     public float speed;
     public float radius = .05f;
     public int routeIndex = 0;
+    public bool destinationReached;
 
 
     public void Path(Node Begin, Node End)
     {
+        foreach(Node node in allNodes)
+        {
+            node.gScore = 0;
+            node.hScore = 0;
+        }
+
         OpenList = new List<Node>();
         CloseList = new List<Node>();
 
@@ -96,13 +104,13 @@ public class PathFinder : MonoBehaviour
     }
 
     private void Start()
-    {
+    { 
         wanderer = GetComponent<Wanderer>();
     }
 
     void Update()
     {
-        if(!wanderer.iSeeEnemy) // The wanderer is inside a bush they wait until the enemy leaves -------------------------------------------------------------
+        if(!wanderer.iSeeEnemy && wanderer.stayingInBush == false) // The wanderer is inside a bush they wait until the enemy leaves -------------------------------------------------------------
         {
             if(routeIndex < routeBack.Count) // if the player hasn't made it to the end
             {
@@ -131,8 +139,12 @@ public class PathFinder : MonoBehaviour
                         maxEndDist = newEndDistance;
                     }
                 }
+                
                 FindNewPath(endNode.transform.position);
             }
         }
+        
     }
+
+    
 }

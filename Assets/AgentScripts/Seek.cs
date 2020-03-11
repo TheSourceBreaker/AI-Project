@@ -23,7 +23,7 @@ public class Seek : MonoBehaviour
 
     void FixedUpdate()
     {
-        if(isSeeking == true)
+        if (isSeeking == true && Target != null)
         {
             v = (Target.transform.position - transform.position).normalized * 100; //calculate a vector from the agent to its target
 

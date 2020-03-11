@@ -60,14 +60,7 @@ public class Assassin : MonoBehaviour
             currentDecision = currentDecision.MakeDecision();
         }
 
-        if(timeBtwHits <= 0)
-        {
-
-        }
-        else
-        {
-            timeBtwHits -= Time.deltaTime;
-        }
+        
     }
 }
 
@@ -117,13 +110,15 @@ public class IsPlayerInBush : IDecision //--------------------------------------
     {
         for(int i = 0; i < assassin.player.Count; i++)
         {
-            wanderer = assassin.player[i].GetComponent<Wanderer>();
-
-            if (wanderer.InBush)
+            if(assassin.player[i] != null)
             {
-                value = true;
+                wanderer = assassin.player[i].GetComponent<Wanderer>();
+
+                if (wanderer.InBush)
+                {
+                    value = true;
+                }
             }
-            
         }
 
         if(value != true)
@@ -158,7 +153,8 @@ public class AmICloseToPlayer : IDecision
     {
         for(int i = 0; i < assassin.player.Count; i++)
         {
-            if (Vector3.Distance(assassin.player[i].transform.position, assassin.transform.position) < assassin.playerBushDist)
+            
+            if (assassin.player[i] != null && Vector3.Distance(assassin.player[i].transform.position, assassin.transform.position) < 2)
             {
                 value = true;
             }
@@ -215,6 +211,34 @@ public class AttackPlayer : IDecision //----------------------------------------
     public IDecision MakeDecision()
     {
         // attack per second
+        Wanderer wanderer;
+        float minDistance = Mathf.Infinity;
+        float newDist;
+        int index = 0;
+
+        for(int i = 0; i < assassin.player.Count; i++)
+        {
+            newDist = Vector3.Distance(assassin.transform.position, assassin.player[i].transform.position);
+            if (newDist< minDistance)
+            {
+                minDistance = newDist;
+                index = i;
+            }
+            
+        }
+
+        wanderer = assassin.player[index].GetComponent<Wanderer>();
+
+        if (assassin.timeBtwHits <= 0)
+        {
+            wanderer.wandererHealth--;
+            assassin.timeBtwHits = assassin.startTimeBtwHits;
+        }
+        else
+        {
+            assassin.timeBtwHits -= Time.deltaTime;
+        }
+
         assassin.wander.isWandering = false;
         return null;
     }

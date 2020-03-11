@@ -6,10 +6,14 @@ public class Wanderer : MonoBehaviour
 {
     public Seek seek;
     public Flee flee;
+    public GameObject assassin;
+    public float timeBtwHits;
+    public float startTimeBtwHits;
 
     [Header("Wanderer Stats")]
     public int wandererHealth;
     public bool InBush;
+    public bool stayingInBush;
     public bool iSeeBush;
     public bool iSeeEnemy;
     private Rigidbody rb;
@@ -52,11 +56,42 @@ public class Wanderer : MonoBehaviour
         }
     }
 
+    void OnDestroy()
+    {
+        Assassin assassin;
+        float minDistance = Mathf.Infinity;
+        float newDist = 0;
+        int index = 0;
+
+        Collider[] colliders = Physics.OverlapSphere(transform.position, 1);
+
+        for(int i = 0; i < colliders.Length; i++)
+        {
+            newDist = Vector3.Distance(transform.position, colliders[i].gameObject.transform.position);
+
+            if (newDist < minDistance)
+            {
+                minDistance = newDist;
+                index = i;
+            }
+
+        }
+
+        if(colliders.Length > 0 && colliders[index] != null)
+        {
+            assassin = colliders[index].gameObject.GetComponent<Assassin>();
+            if (assassin != null)
+                assassin.player.Remove(gameObject);
+        }
+    }
+
     void Start() // set everything to false
     {
+        timeBtwHits = startTimeBtwHits;
         rb = GetComponent<Rigidbody>();
         seek = GetComponent<Seek>();
         flee = GetComponent<Flee>();
+        stayingInBush = false;
         InBush = false;
         iSeeBush = false;
         iSeeEnemy = false;
@@ -64,7 +99,20 @@ public class Wanderer : MonoBehaviour
 
     void Update()
     {
-        if(wandererHealth > 0) // if wanderer has health, then it's alive
+        if(stayingInBush == true)
+        {
+            if (timeBtwHits <= 0)
+            {
+                stayingInBush = false;
+                timeBtwHits = startTimeBtwHits;
+            }
+            else
+            {
+                timeBtwHits -= Time.deltaTime;
+            }
+        }
+
+        if (wandererHealth > 0 && stayingInBush == false) // if wanderer has health, then it's alive
         {
             WandererAI =    new DoISeeEnemy(
                                 new AmIInBush(
@@ -81,7 +129,7 @@ public class Wanderer : MonoBehaviour
                 currentDecision = currentDecision.MakeDecision();
             }
         }
-        else
+        else if(wandererHealth <= 0)
         {
             Destroy(gameObject);
         }
@@ -247,6 +295,8 @@ public class StayInBush : IDecision
     public IDecision MakeDecision()
     {
         // Hold position/Do nothing
+
+        wanderer.stayingInBush = true;
         wanderer.flee.isFleeing = false;
         wanderer.seek.isSeeking = false;
         return null;

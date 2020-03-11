@@ -5,6 +5,7 @@ using UnityEngine;
 public class Wander : MonoBehaviour
 {
     Agent agent;
+    Assassin assassin;
     public Vector3 wanderTarget;
     private Vector3 force;
     private Vector3 v;
@@ -16,6 +17,7 @@ public class Wander : MonoBehaviour
     private void Awake()
     {
         agent = GetComponent<Agent>();
+        assassin = GetComponent<Assassin>();
     }
     void Start()
     {
@@ -26,6 +28,8 @@ public class Wander : MonoBehaviour
     {
         if (isWandering)
         {
+            
+
             if (Vector3.Distance(transform.position, wanderTarget) < wanderTolerance) // If the agent is near(wanderTol) the target
             {
                 NewTarget(); // change target
